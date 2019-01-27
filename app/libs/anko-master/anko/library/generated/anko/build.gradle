@@ -1,0 +1,11 @@
+apply from: '../../library.gradle'
+
+dependencies {
+    api project(':generated:anko-commons')
+    api project(':generated:anko-coroutines')
+    api project(':generated:anko-sqlite')
+    api project(':generated:anko-sdk27')
+    api project(':generated:anko-sdk27-coroutines')
+    api project(':generated:anko-appcompat-v7')
+    api project(':generated:anko-appcompat-v7-coroutines')
+}

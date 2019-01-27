@@ -1,0 +1,152 @@
+import java.util.zip.ZipEntry
+import java.util.zip.ZipOutputStream
+
+buildscript {
+    ext.kotlin_version = '1.3.0'
+    ext.kotlinx_dom_version = '0.0.10'
+    ext.kotlinx_coroutines_version = '1.0.0'
+
+    ext.ANKO_VERSION = '0.10.8'
+    ext.ANKO_VERSION_CODE = 106
+
+    ext.COMPILE_SDK_VERSION = 28
+    ext.MIN_SDK_VERSION = 15
+    ext.TARGET_SDK_VERSION = 28
+    ext.SUPPORT_ARTIFACT_VERSION = "27.1.1"
+    ext.CONSTRAINT_LAYOUT_ARTIFACT_VERSION = "1.1.2"
+
+    ext.PROJECT_URL = 'https://github.com/JetBrains/anko'
+    ext.SCM_URL = 'https://github.com/JetBrains/anko.git'
+    ext.CONNECTION_URL = 'scm:git:https://github.com/JetBrains/anko.git'
+    ext.DEVELOPER_CONNECTION_URL = 'scm:git:https://github.com/JetBrains/anko'
+
+    ext.BINTRAY_USER_NAME = 'jetbrains'
+    ext.BINTRAY_PACKAGE_NAME = 'anko'
+    ext.BINTRAY_REPO_NAME = 'anko'
+
+    ext.BINTRAY_DRY_RUN = false
+
+    ext.POM_ARTIFACT_GROUP = 'org.jetbrains.anko'
+
+    repositories {
+        google()
+        jcenter()
+    }
+
+    dependencies {
+        classpath "com.android.tools.build:gradle:3.1.2"
+        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
+        classpath 'com.github.jengelman.gradle.plugins:shadow:2.0.4'
+        classpath 'com.jfrog.bintray.gradle:gradle-bintray-plugin:1.8.4'
+        classpath "org.jetbrains.dokka:dokka-android-gradle-plugin:0.9.16"
+    }
+}
+
+allprojects {
+    repositories {
+        google()
+        jcenter()
+    }
+}
+
+task clean {
+    doLast {
+        delete(buildDir)
+    }
+}
+
+task zipIdeaPlugin {
+    dependsOn(':ide:preview:shadowJar')
+    outputs.files("$buildDir/anko-ide-plugin.zip")
+
+    doLast {
+        File outputFile = new File("$buildDir/anko-ide-plugin.zip")
+        ZipOutputStream zipOutputStream = null
+
+        try {
+            zipOutputStream = new ZipOutputStream(new FileOutputStream(outputFile))
+            ZipEntry jar = new ZipEntry("Anko/lib/anko-ide-plugin.jar")
+            zipOutputStream.putNextEntry(jar)
+
+            zipOutputStream << new FileInputStream("anko/idea-plugin/preview/build/libs/preview-all.jar")
+        } finally {
+            if (zipOutputStream != null) {
+                zipOutputStream.close()
+            }
+        }
+    }
+}
+
+def publishedArtifacts = [
+    ':generated:anko-appcompat-v7',
+    ':generated:anko-appcompat-v7-listeners',
+    ':generated:anko-appcompat-v7-coroutines',
+    ':generated:anko-appcompat-v7-commons',
+    ':generated:anko-cardview-v7',
+    ':generated:anko-common',
+    ':generated:anko-commons',
+    ':generated:anko-design',
+    ':generated:anko-design-listeners',
+    ':generated:anko-design-coroutines',
+    ':generated:anko-gridlayout-v7',
+    ':generated:anko-percent',
+    ':generated:anko-constraint-layout',
+    ':generated:anko-recyclerview-v7',
+    ':generated:anko-recyclerview-v7-listeners',
+    ':generated:anko-recyclerview-v7-coroutines',
+    ':generated:anko-sdk15',
+    ':generated:anko-sdk15-listeners',
+    ':generated:anko-sdk15-coroutines',
+    ':generated:anko-sdk19',
+    ':generated:anko-sdk19-listeners',
+    ':generated:anko-sdk19-coroutines',
+    ':generated:anko-sdk21',
+    ':generated:anko-sdk21-listeners',
+    ':generated:anko-sdk21-coroutines',
+    ':generated:anko-sdk23',
+    ':generated:anko-sdk23-listeners',
+    ':generated:anko-sdk23-coroutines',
+    ':generated:anko-sdk25',
+    ':generated:anko-sdk25-listeners',
+    ':generated:anko-sdk25-coroutines',
+    ':generated:anko-sdk27',
+    ':generated:anko-sdk27-listeners',
+    ':generated:anko-sdk27-coroutines',
+    ':generated:anko-sdk28',
+    ':generated:anko-sdk28-listeners',
+    ':generated:anko-sdk28-coroutines',
+    ':generated:anko-sqlite',
+    ':generated:anko-support-v4',
+    ':generated:anko-support-v4-commons',
+    ':generated:anko-coroutines',
+    ':generated:anko',
+
+    ':static:commons-base',
+    ':static:platform-base',
+    ':static:sqlite-base',
+    ':static:design-base',
+    ':static:supportV4-base',
+    ':static:appcompatV7-base',
+    ':static:constraint-layout-base'
+]
+
+task dist()
+task publish()
+task publishLocal()
+
+afterEvaluate {
+    def commonBuildTasks = [
+            ':zipIdeaPlugin',
+            ':generator:run',
+            ':generator:test',
+            ':robolectricTests:test'
+    ]
+
+    project.tasks.dist.dependsOn(commonBuildTasks)
+    project.tasks.publish.dependsOn(commonBuildTasks)
+    project.tasks.publishLocal.dependsOn(commonBuildTasks)
+
+    project.tasks.dist.dependsOn(publishedArtifacts.collect { it + ":assembleRelease" })
+    project.tasks.publish.dependsOn(publishedArtifacts.collect { it + ":bintrayUpload" })
+    project.tasks.publishLocal.dependsOn(publishedArtifacts.collect { it + ":publish" })
+}

@@ -1,0 +1,6 @@
+apply from: '../../library.gradle'
+
+dependencies {
+    api "com.android.support:cardview-v7:$SUPPORT_ARTIFACT_VERSION"
+    api project(':generated:anko-commons')
+}
